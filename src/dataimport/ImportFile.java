@@ -1,6 +1,5 @@
-package mapreduce.dataimport;
+package dataimport;
 
-import mapreduce.dataimport.mapper.JsonMapper;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -12,15 +11,14 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
+
+import dataimport.mappers.JsonMapper;
 
 public class ImportFile {
 
@@ -43,22 +41,6 @@ public class ImportFile {
 		// get details
 		String tableName = cmd.getOptionValue("t");
 		String inputFile = cmd.getOptionValue("i");
-//		String outputFile = cmd.getOptionValue("o");
-
-		// get table
-//		HTable table = new HTable(conf, tableName);
-
-		// create job and set classes etc.
-//		Job job = new Job(conf, "Prepare from file " + inputFile + " into "
-//				+ tableName);
-//		job.setJarByClass(ImportFile.class);
-//		job.setMapperClass(JsonMapper.class);
-//		job.setMapOutputKeyClass(ImmutableBytesWritable.class);
-//		job.setMapOutputValueClass(Writable.class);
-//		job.setNumReduceTasks(0);
-//		FileInputFormat.setInputPaths(job, new Path(inputFile));
-//		FileOutputFormat.setOutputPath(job, new Path(outputFile));
-//		HFileOutputFormat.configureIncrementalLoad(job, table);
 		
 	    Job job = new Job(conf, "Import from file " + inputFile + " into table " + tableName);
 	    job.setJarByClass(ImportFile.class);
@@ -92,9 +74,6 @@ public class ImportFile {
 		options.addOption(o);
 		o = new Option("i", "input", true,
 				"the directory in DFS to read files from");
-		o.setRequired(true);
-		options.addOption(o);
-		o = new Option("o", "output", true, "the file the output is written to");
 		o.setRequired(true);
 		options.addOption(o);
 		
