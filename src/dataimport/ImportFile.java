@@ -1,13 +1,9 @@
 package dataimport;
 
+import java.io.IOException;
 
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.PosixParser;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -17,76 +13,68 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.log4j.Logger;
 
+import dataimport.helpers.CommandLineHelper;
+import dataimport.helpers.TableHelper;
 import dataimport.mappers.JsonMapper;
 
 public class ImportFile {
+	
+	private Logger logger;
+	private Configuration conf;
+	
+	private String inputFile;
+	private String tableName;
+	private String colfam;
+	
+	public ImportFile() {
+		logger = Logger.getLogger(ImportFile.class);
+		conf = HBaseConfiguration.create();
+	}
 
-	public static final String NAME = "PrepareJson";
-
-	/**
-	 * Main entry point.
-	 * 
-	 * @param args
-	 *            The command line parameters.
-	 * @throws Exception
-	 *             When running the job fails.
-	 */
 	public static void main(String[] args) throws Exception {
-		Configuration conf = HBaseConfiguration.create();
-		String[] otherArgs = new GenericOptionsParser(conf, args)
-				.getRemainingArgs();
-		CommandLine cmd = parseArgs(otherArgs);
-
-		// get details
-		String tableName = cmd.getOptionValue("t");
-		String inputFile = cmd.getOptionValue("i");
-		
+		ImportFile importer = new ImportFile();
+		importer.setArguments(args);
+		importer.createTable();
+		Job job = importer.insertData();
+		importer.runJob(job);
+	}
+	
+	private void setArguments(String[] args) throws ParseException {
+		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		CommandLine cmd = CommandLineHelper.parseArgs(otherArgs);
+		inputFile = cmd.getOptionValue("i");
+		tableName = cmd.getOptionValue("t");
+		colfam = cmd.getOptionValue("c");
+	}
+	
+	private void createTable() throws IOException {
+		TableHelper th = new TableHelper(conf);
+		if (th.existsTable(tableName)) {
+			logger.error("Table already exists!");
+			System.exit(-1);
+		}
+		else {
+			th.createTable(tableName, colfam);
+		}
+	}
+	
+	private Job insertData() throws IOException {
 	    Job job = new Job(conf, "Import from file " + inputFile + " into table " + tableName);
+	    FileInputFormat.addInputPath(job, new Path(inputFile));
 	    job.setJarByClass(ImportFile.class);
 	    job.setMapperClass(JsonMapper.class);
 	    job.setOutputFormatClass(TableOutputFormat.class);
 	    job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, tableName);
 	    job.setOutputKeyClass(ImmutableBytesWritable.class);
 	    job.setOutputValueClass(Writable.class);
-	    job.setNumReduceTasks(0);
-	    FileInputFormat.addInputPath(job, new Path(inputFile));
-
-		// run the job
-		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	    job.setNumReduceTasks(0);  
+	    return job;
 	}
-
-	/**
-	 * Parse the command line parameters.
-	 * 
-	 * @param args
-	 *            The parameters to parse.
-	 * @return The parsed command line.
-	 * @throws org.apache.commons.cli.ParseException
-	 *             When the parsing of the parameters fails.
-	 */
-	private static CommandLine parseArgs(String[] args) throws ParseException {
-		// create options
-		Options options = new Options();
-		Option o = new Option("t", "table", true,
-				"table to import into (must exist)");
-		o.setRequired(true);
-		options.addOption(o);
-		o = new Option("i", "input", true,
-				"the directory in DFS to read files from");
-		o.setRequired(true);
-		options.addOption(o);
-		
-		// check if we are missing parameters
-		if (args.length == 0) {
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(NAME + " ", options, true);
-			System.exit(-1);
-		}
-		
-		CommandLineParser parser = new PosixParser();
-		CommandLine cmd = parser.parse(options, args);
-		return cmd;
+	
+	private void runJob(Job job) throws IOException, InterruptedException, ClassNotFoundException {
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 
 }
