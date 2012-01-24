@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 import dataimport.helpers.CommandLineHelper;
 import dataimport.helpers.TableHelper;
 import dataimport.mappers.JsonMapper;
+import dataimport.mappers.XMLMapper;
 
 public class ImportFile {
 	
@@ -35,10 +36,19 @@ public class ImportFile {
 
 	public static void main(String[] args) throws Exception {
 		ImportFile importer = new ImportFile();
-		importer.setArguments(args);
-		importer.createTable();
-		Job job = importer.insertData();
-		importer.runJob(job);
+		try {			
+			importer.setArguments(args);			
+			
+			//TEMP!!!!
+			importer.dropTable();			
+			
+			importer.createTable();
+			Job job = importer.insertData();
+			importer.runJob(job);
+		} catch (Exception e) {
+			importer.dropTable();
+			throw e;
+		}
 	}
 	
 	private void setArguments(String[] args) throws ParseException {
@@ -60,11 +70,18 @@ public class ImportFile {
 		}
 	}
 	
+	private void dropTable() throws IOException {
+		TableHelper th = new TableHelper(conf);
+		if (th.existsTable(tableName)) {
+			th.dropTable(tableName);
+		}
+	}
+	
 	private Job insertData() throws IOException {
 	    Job job = new Job(conf, "Import from file " + inputFile + " into table " + tableName);
 	    FileInputFormat.addInputPath(job, new Path(inputFile));
 	    job.setJarByClass(ImportFile.class);
-	    job.setMapperClass(JsonMapper.class);
+	    job.setMapperClass(XMLMapper.class);
 	    job.setOutputFormatClass(TableOutputFormat.class);
 	    job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, tableName);
 	    job.setOutputKeyClass(ImmutableBytesWritable.class);

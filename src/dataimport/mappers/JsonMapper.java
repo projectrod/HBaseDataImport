@@ -16,8 +16,6 @@ import org.json.simple.parser.JSONParser;
 public class JsonMapper extends
 		Mapper<LongWritable, Text, ImmutableBytesWritable, Writable> {
 
-	private JSONParser parser = new JSONParser();
-
 	/**
 	 * Maps the input.
 	 * 
@@ -34,6 +32,7 @@ public class JsonMapper extends
 	public void map(LongWritable offset, Text line, Context context)
 			throws IOException {
 		try {
+			JSONParser parser = new JSONParser();
 			JSONObject json = (JSONObject) parser.parse(line.toString());
 			String link = (String) json.get("link");
 			byte[] md5Url = DigestUtils.md5(link);
