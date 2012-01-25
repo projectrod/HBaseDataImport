@@ -21,10 +21,6 @@ public class CommandLineHelper {
 				"table to import into");
 		t.setRequired(true);
 		options.addOption(t);
-		Option c = new Option("c", "colfam", true,
-				"colfam to import into");
-		c.setRequired(true);
-		options.addOption(c);
 		
 		// check if we are missing parameters
 		if (args.length == 0) {

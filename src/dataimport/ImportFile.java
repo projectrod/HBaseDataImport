@@ -27,7 +27,6 @@ public class ImportFile {
 	
 	private String inputFile;
 	private String tableName;
-	private String colfam;
 	
 	public ImportFile() {
 		logger = Logger.getLogger(ImportFile.class);
@@ -56,7 +55,6 @@ public class ImportFile {
 		CommandLine cmd = CommandLineHelper.parseArgs(otherArgs);
 		inputFile = cmd.getOptionValue("i");
 		tableName = cmd.getOptionValue("t");
-		colfam = cmd.getOptionValue("c");
 	}
 	
 	private void createTable() throws IOException {
@@ -66,7 +64,7 @@ public class ImportFile {
 			System.exit(-1);
 		}
 		else {
-			th.createTable(tableName, colfam);
+			th.createTable(tableName, "attributes", "value");
 		}
 	}
 	

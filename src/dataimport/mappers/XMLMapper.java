@@ -2,21 +2,24 @@ package dataimport.mappers;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Iterator;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
+ 
 public class XMLMapper extends
 		Mapper<LongWritable, Text, ImmutableBytesWritable, Writable> {
 
@@ -43,20 +46,25 @@ public class XMLMapper extends
 	        Node root = xml.getFirstChild();
 	        NodeList nodes = root.getChildNodes();
 	        
-	        for (int i = 0; i < nodes.getLength(); i++) {
-	        	Element e = (Element) nodes.item(i);
-	        	System.out.println(e.getNodeName());
+	        for (int indexElement = 0; indexElement < 10; indexElement++) {
+	        	Element element = (Element) nodes.item(indexElement);
+				Put put = new Put(Bytes.toBytes(indexElement));
+
+				if (element.hasAttributes()) {
+					NamedNodeMap attributes = element.getAttributes();
+					for (int indexAttribute = 0; indexAttribute < attributes
+							.getLength(); indexAttribute++) {
+						Attr attribuut = (Attr) attributes.item(indexAttribute);
+						put.add(Bytes.toBytes("attributes"),
+								Bytes.toBytes(attribuut.getNodeName()),
+								Bytes.toBytes(attribuut.getNodeValue()));
+					}
+				}
+				if (element.getNodeValue() != null) {
+					put.add(Bytes.toBytes("value"), Bytes.toBytes(element.getNodeName()), Bytes.toBytes(element.getNodeValue()));
+				}
+	        	context.write(new ImmutableBytesWritable() , put);
 	        }
-//			JSONObject json = (JSONObject) parser.parse(line.toString());
-//			String link = (String) json.get("link");
-//			byte[] md5Url = DigestUtils.md5(link);
-//			Put put = new Put(md5Url);
-//			for (Object key : json.keySet()) {
-//				Object val = json.get(key);
-//				put.add(Bytes.toBytes("data"), Bytes.toBytes(key.toString()),
-//						Bytes.toBytes(val.toString()));
-//			}
-			//context.write(new ImmutableBytesWritable(md5Url), put);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
