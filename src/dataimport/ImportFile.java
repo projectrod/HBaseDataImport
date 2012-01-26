@@ -12,12 +12,12 @@ import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Logger;
 
 import dataimport.helpers.CommandLineHelper;
 import dataimport.helpers.TableHelper;
-import dataimport.mappers.JsonMapper;
 import dataimport.mappers.XMLMapper;
 
 public class ImportFile {
@@ -37,10 +37,6 @@ public class ImportFile {
 		ImportFile importer = new ImportFile();
 		try {			
 			importer.setArguments(args);			
-			
-			//TEMP!!!!
-			importer.dropTable();			
-			
 			importer.createTable();
 			Job job = importer.insertData();
 			importer.runJob(job);
@@ -78,6 +74,7 @@ public class ImportFile {
 	private Job insertData() throws IOException {
 	    Job job = new Job(conf, "Import from file " + inputFile + " into table " + tableName);
 	    FileInputFormat.addInputPath(job, new Path(inputFile));
+	    job.setInputFormatClass(TextInputFormat.class);
 	    job.setJarByClass(ImportFile.class);
 	    job.setMapperClass(XMLMapper.class);
 	    job.setOutputFormatClass(TableOutputFormat.class);

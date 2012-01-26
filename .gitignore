@@ -8,3 +8,5 @@
 #Project Folders/Files
 /bin
 /test-data
+
+*.jar

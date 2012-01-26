@@ -45,8 +45,8 @@ public class XMLMapper extends
 		
 	        Node root = xml.getFirstChild();
 	        NodeList nodes = root.getChildNodes();
-	        
-	        for (int indexElement = 0; indexElement < 10; indexElement++) {
+
+	        for (int indexElement = 0; indexElement < nodes.getLength(); indexElement++) {
 	        	Element element = (Element) nodes.item(indexElement);
 				Put put = new Put(Bytes.toBytes(indexElement));
 
