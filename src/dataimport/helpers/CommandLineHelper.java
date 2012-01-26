@@ -21,6 +21,10 @@ public class CommandLineHelper {
 				"table to import into");
 		t.setRequired(true);
 		options.addOption(t);
+		Option p = new Option("p", "parser type", true,
+				"type parser to use, for example xml or json");
+		p.setRequired(true);
+		options.addOption(p);
 		
 		// check if we are missing parameters
 		if (args.length == 0) {

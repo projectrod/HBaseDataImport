@@ -2,7 +2,6 @@ package dataimport.mappers;
 
 import java.io.IOException;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -13,8 +12,10 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-public class JsonMapper extends
+public class JSONMapper extends
 		Mapper<LongWritable, Text, ImmutableBytesWritable, Writable> {
+	
+	private int counter = 0;
 
 	/**
 	 * Maps the input.
@@ -34,15 +35,16 @@ public class JsonMapper extends
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject json = (JSONObject) parser.parse(line.toString());
-			String link = (String) json.get("link");
-			byte[] md5Url = DigestUtils.md5(link);
-			Put put = new Put(md5Url);
+			
+			Put put = new Put(Bytes.toBytes(counter));
 			for (Object key : json.keySet()) {
 				Object val = json.get(key);
-				put.add(Bytes.toBytes("data"), Bytes.toBytes(key.toString()),
+				put.add(Bytes.toBytes("value"), Bytes.toBytes(key.toString()),
 						Bytes.toBytes(val.toString()));
 			}
-			context.write(new ImmutableBytesWritable(md5Url), put);
+			context.write(new ImmutableBytesWritable(), put);
+			
+			counter++;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

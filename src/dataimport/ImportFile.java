@@ -1,6 +1,7 @@
 package dataimport;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
@@ -11,6 +12,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
@@ -18,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import dataimport.helpers.CommandLineHelper;
 import dataimport.helpers.TableHelper;
+import dataimport.mappers.JSONMapper;
 import dataimport.mappers.XMLMapper;
 
 public class ImportFile {
@@ -27,6 +30,9 @@ public class ImportFile {
 	
 	private String inputFile;
 	private String tableName;
+	private String parserType;
+	
+	private String[] supportedParserTypes = new String[] {"xml", "json"};
 	
 	public ImportFile() {
 		logger = Logger.getLogger(ImportFile.class);
@@ -51,6 +57,12 @@ public class ImportFile {
 		CommandLine cmd = CommandLineHelper.parseArgs(otherArgs);
 		inputFile = cmd.getOptionValue("i");
 		tableName = cmd.getOptionValue("t");
+		if (Arrays.asList(supportedParserTypes).contains(cmd.getOptionValue("p"))) {
+			parserType = cmd.getOptionValue("p");
+		}
+		else {
+			throw new ParseException("Not a valid parser type");
+		}
 	}
 	
 	private void createTable() throws IOException {
@@ -76,7 +88,7 @@ public class ImportFile {
 	    FileInputFormat.addInputPath(job, new Path(inputFile));
 	    job.setInputFormatClass(TextInputFormat.class);
 	    job.setJarByClass(ImportFile.class);
-	    job.setMapperClass(XMLMapper.class);
+	    job.setMapperClass((Class<? extends Mapper>) getMapper().getClass());
 	    job.setOutputFormatClass(TableOutputFormat.class);
 	    job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, tableName);
 	    job.setOutputKeyClass(ImmutableBytesWritable.class);
@@ -87,6 +99,16 @@ public class ImportFile {
 	
 	private void runJob(Job job) throws IOException, InterruptedException, ClassNotFoundException {
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+	
+	private Object getMapper() {
+		if (parserType.equals("xml")) {
+			return new XMLMapper();
+		}
+		else if (parserType.equals("json")) {
+			return new JSONMapper();
+		}
+		return null;
 	}
 
 }
