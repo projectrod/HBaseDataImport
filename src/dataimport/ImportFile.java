@@ -46,6 +46,8 @@ public class ImportFile {
 			importer.createTable();
 			Job job = importer.insertData();
 			importer.runJob(job);
+		} catch (ParseException p) {
+			throw p;
 		} catch (Exception e) {
 			importer.dropTable();
 			throw e;
@@ -84,6 +86,7 @@ public class ImportFile {
 	}
 	
 	private Job insertData() throws IOException {
+		conf.set("mapred.task.timeout", "1800000");
 	    Job job = new Job(conf, "Import from file " + inputFile + " into table " + tableName);
 	    FileInputFormat.addInputPath(job, new Path(inputFile));
 	    job.setInputFormatClass(TextInputFormat.class);
@@ -94,7 +97,7 @@ public class ImportFile {
 	    job.setOutputKeyClass(ImmutableBytesWritable.class);
 	    job.setOutputValueClass(Writable.class);
 	    job.setNumReduceTasks(0);  
-	    return job;
+		return job;
 	}
 	
 	private void runJob(Job job) throws IOException, InterruptedException, ClassNotFoundException {
